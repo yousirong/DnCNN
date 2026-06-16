@@ -4,6 +4,81 @@ This repository contains the codes for the implementation of the paper - [Beyond
 
 [Beyond a Gaussian Denoiser: Residual Learning of Deep CNN for Image Denoising]: https://ieeexplore.ieee.org/document/7839189
 
+## TCNS FSA PyTorch Baseline
+
+The original Keras/TF1 files are preserved. For the TCNS sparse-transmit
+benchmark, this repository also includes a PyTorch DnCNN baseline that uses the
+TCNS virtual environment and metrics.
+
+Task:
+
+```text
+input_tx01 + input_tx11 -> input_tx75
+```
+
+The target is `input_tx75`, not `gt_txAll`. The model pools tx01 and tx11 into
+one blind 1-channel DnCNN and reports tx01/tx11 test metrics separately.
+
+Single-command train and test:
+
+```bash
+cd /home/ubuntu/Desktop/JY/DnCNN
+CUDA_VISIBLE_DEVICES=0 ./run_train_test_fsa_dncnn.sh
+```
+
+Preflight data check only:
+
+```bash
+./run_train_test_fsa_dncnn.sh --check
+```
+
+Fast end-to-end smoke run:
+
+```bash
+./run_train_test_fsa_dncnn.sh --smoke
+```
+
+Manual commands:
+
+```bash
+PYTHON=../TCNS/venv/bin/python
+DATA=../TCNS/data/mydata/fsa_dataset_fullres
+
+CUDA_VISIBLE_DEVICES=0 "$PYTHON" train_fsa_dncnn.py \
+  --data_dir "$DATA" \
+  --input_levels tx01 tx11 \
+  --target_level tx75 \
+  --crop_size 256 \
+  --repeat 8 \
+  --batch_size 16 \
+  --epochs 80 \
+  --lr 1e-3 \
+  --depth 17 \
+  --loss mse \
+  --val_fraction 0.15 \
+  --output_dir results/fsa_dncnn_tx75
+
+CUDA_VISIBLE_DEVICES=0 "$PYTHON" test_fsa_dncnn.py \
+  --data_dir "$DATA" \
+  --split test \
+  --input_levels tx01 tx11 \
+  --target_level tx75 \
+  --crop_size 256 \
+  --checkpoint results/fsa_dncnn_tx75/model_best.pt \
+  --output_dir results/fsa_dncnn_tx75/eval
+```
+
+Outputs:
+
+```text
+results/fsa_dncnn_tx75/model_best.pt
+results/fsa_dncnn_tx75/train_log.csv
+results/fsa_dncnn_tx75/eval/per_case_metrics.csv
+results/fsa_dncnn_tx75/eval/summary.json
+results/fsa_dncnn_tx75/eval/comparison_grid.png
+results/fsa_dncnn_tx75/eval/denoised/{tx01,tx11}/
+```
+
 ## Introduction
 
 During the past decade, convolutional neural networks have shown great success in handling various low-level vision tasks. Image denoising is one such long-standing problem in computer vision. The goal of image denoising is to recover the clean image *x* from the noisy image *y = x + v*. The assumption is that *v* is Additive White Gaussian Noise (AWGN). In general, image denoising methods can be grouped into two major categories - model based methods, and discriminative learning based. Model based methods like BM3D and WNNM are flexible in handling denoising problem with various noise levels, but their execution is time consuming, and they require the modelling of complicated priors. To overcome these drawbacks, discriminative methods have been developed.

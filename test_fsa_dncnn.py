@@ -55,11 +55,14 @@ def parse_args() -> argparse.Namespace:
 
 
 def composite(metrics: dict[str, float]) -> float:
+    # Fidelity-dominant weights (P6): PSNR/SSIM are reliable; gCNR/CNR use
+    # tx75-derived pseudo-ROIs (weak proxies) so they are demoted. Kept in sync
+    # with TCNS evaluation/compare_conditional_txall_models.py composite().
     return float(
-        0.25 * np.clip(metrics["psnr"] / 30.0, 0.0, 1.0)
-        + 0.25 * np.clip(metrics["ssim"], 0.0, 1.0)
-        + 0.30 * np.clip(metrics["gcnr"], 0.0, 1.0)
-        + 0.20 * np.clip(metrics["cnr"] / 3.0, 0.0, 1.0)
+        0.35 * np.clip(metrics["psnr"] / 30.0, 0.0, 1.0)
+        + 0.35 * np.clip(metrics["ssim"], 0.0, 1.0)
+        + 0.15 * np.clip(metrics["gcnr"], 0.0, 1.0)
+        + 0.15 * np.clip(metrics["cnr"] / 3.0, 0.0, 1.0)
     )
 
 

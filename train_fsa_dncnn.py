@@ -55,6 +55,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--weight_decay", type=float, default=0.0)
     parser.add_argument("--depth", type=int, default=17)
     parser.add_argument("--features", type=int, default=64)
+    parser.add_argument("--no_batch_norm", action="store_true",
+                        help="Disable BatchNorm (avoids residual blow-up on out-of-distribution inputs).")
     parser.add_argument("--loss", choices=["mse", "l1"], default="mse")
     parser.add_argument("--val_fraction", type=float, default=0.15)
     parser.add_argument("--seed", type=int, default=2026)
@@ -245,7 +247,8 @@ def main() -> None:
     )
 
     device = torch.device(args.device)
-    model = DnCNN(depth=args.depth, features=args.features).to(device)
+    model = DnCNN(depth=args.depth, features=args.features,
+                  use_batch_norm=not args.no_batch_norm).to(device)
     optimizer = torch.optim.Adam(
         model.parameters(),
         lr=args.lr,
